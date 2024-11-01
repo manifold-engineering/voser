@@ -1,6 +1,7 @@
 #include "widgets/plotwidget.h"
 
-#include<iostream>
+#include <iostream>
+#include <cmath>
 
 extern double x_min;
 extern double x_max;
@@ -18,16 +19,13 @@ PlotWidget::PlotWidget(QWidget *parent) : QWidget(parent)
     plotMainLayout->addWidget(customPlot);
 
 
-    //following code was heavily inspired by QCPColorMap example
-    //some lines are actually literally copied
-    //sorry
 
     // configure axis rect:
     customPlot->setInteractions(QCP::iRangeDrag|QCP::iRangeZoom); // this will also allow rescaling the color scale by dragging/zooming
     customPlot->axisRect()->setupFullAxesBox(true);
     customPlot->xAxis->setLabel("x [m]");
     customPlot->yAxis->setLabel("y [m]");
-    customPlot->yAxis->setScaleRatio(customPlot->xAxis, 1.0);
+    //customPlot->yAxis->setScaleRatio(customPlot->xAxis, 1.0);
 
     // set up the QCPColorMap:
     colorMap = new QCPColorMap(customPlot->xAxis, customPlot->yAxis);
@@ -65,19 +63,51 @@ PlotWidget::PlotWidget(QWidget *parent) : QWidget(parent)
     // rescale the key (x) and value (y) axes so the whole color map is visible:
     customPlot->rescaleAxes();
 
+    // Set up the timer with a 500ms interval
+    zoomTimer = new QTimer(this);
+    zoomTimer->setInterval(500);
+    zoomTimer->setSingleShot(true); // Only emit timeout once after stopping
+
+    lastXMax =x_max;
+    lastXMin =x_min;
+    lastYMax =y_max;
+    lastYMin =y_min;
+
+    //zooming detection
+    connect(customPlot, &QCustomPlot::mouseWheel,
+            this, &PlotWidget::onMouseWheel);
+    connect(zoomTimer, &QTimer::timeout,
+            this, &PlotWidget::onZoomFinished);
+
+    // Set both x and y axes to zoom together
+    customPlot->axisRect()->setRangeZoom(Qt::Horizontal | Qt::Vertical);
+
+    // Connect to the mouse wheel event to control zooming behavior
+    connect(customPlot, &QCustomPlot::mouseWheel, this, [=](QWheelEvent *event) {
+        // Check if the mouse is within the plot area (excluding the axes)
+        if (customPlot->viewport().contains(event->position().toPoint()) &&
+            customPlot->axisRect()->rect().contains(event->position().toPoint())) {
+            // Allow zooming both axes within the plot area
+            customPlot->axisRect()->setRangeZoom(Qt::Horizontal | Qt::Vertical);
+        } else {
+            // Disable zooming on individual axes outside the plot area
+            customPlot->axisRect()->setRangeZoom(Qt::Orientations());
+        }
+    });
 
     //debug range replotting
     connect(customPlot, &QCustomPlot::mouseRelease,
             this, &PlotWidget::indicateChange);
 
+
+    connect(this, &PlotWidget::zoomChanged,
+            this, &PlotWidget::indicateChange);
 }
 
 void PlotWidget::replot(Solution data){
     std::cout << data.getM() << ", " << data.getN() << std::endl;
-    //colorMap->data()->setSize(data.getM(), data.getN());
-    //colorMap->data()->setRange(QCPRange(-4, 4), QCPRange(-4, 4)); // and span the coordinate range -4..4 in both key (x) and value (y) dimensions
     // now we assign some data, by accessing the QCPColorMapData instance of the color map:
-    //double x, y, z;
+
     for (unsigned int xIndex=0; xIndex<data.getM(); ++xIndex)
     {
       for (unsigned int yIndex=0; yIndex<data.getN(); ++yIndex)
@@ -102,5 +132,83 @@ void PlotWidget::indicateChange()
     std::cout << rangeFound <<std::endl;
     std::cout << range.lower << ", " << range.upper <<std::endl;
 
+    QCPRange xRange = customPlot->xAxis->range(); // X-axis visible range
+    QCPRange yRange = customPlot->yAxis->range(); // Y-axis visible range
+
+    double xMin = xRange.lower;
+    double xMax = xRange.upper;
+    double yMin = yRange.lower;
+    double yMax = yRange.upper;
+
+    double xMid = xMin+xMax/2;
+    double yMid = yMin+yMax/2;
+
+    QCPAxisRect *axisRect = colorMap->keyAxis()->axisRect();
+    std::cout << "Velikost: " << axisRect->width() << ", " << axisRect->height() <<std::endl;
+    std::cout << "rozsah - X:" << xMin << "-" << xMax <<", Y: " << yMin << "-"<< yMax <<std::endl;
+
+    this->saveRanges();
     //range.upper
 }
+
+
+
+
+void PlotWidget::saveRanges()
+{
+    QCPRange xRange = customPlot->xAxis->range(); // X-axis visible range
+    QCPRange yRange = customPlot->yAxis->range(); // Y-axis visible range
+
+    lastXMin = xRange.lower;
+    lastXMax = xRange.upper;
+    lastYMin = yRange.lower;
+    lastYMax = yRange.upper;
+}
+
+void PlotWidget::adjustAxes()
+{
+    QCPAxisRect *axisRect = colorMap->keyAxis()->axisRect();
+    unsigned int pixX = axisRect->width();
+    unsigned int pixY = axisRect->height();
+    double k = pixX/(double)pixY;
+    std::cout << "DEBUG: Adjusting axes ranges to ratio " << k << std::endl;
+
+    double xRangeOld = lastXMax - lastXMin;
+    double yRangeOld = lastYMax - lastYMin;
+    double xRange = std::sqrt(xRangeOld*yRangeOld*k);
+    double yRange =xRange/k;
+
+    std::cout << "DEBUG: new aspect " << xRange/yRange << std::endl;
+
+    std::cout << "DEBUG: old area" << xRangeOld * yRangeOld << std::endl;
+    std::cout << "DEBUG: new area" << xRange * yRange << std::endl;
+
+    double xMid = (lastXMax+lastXMin)/2;
+    double yMid = (lastYMax+lastYMin)/2;
+
+
+    std::cout << "DEBUG: old mid" << xMid << ", "<< yMid << std::endl;
+
+    customPlot->xAxis->setRange(xMid - xRange/2, xMid + xRange/2);
+    customPlot->yAxis->setRange(yMid - yRange/2, yMid + yRange/2);
+    customPlot->replot();
+    this->saveRanges();
+}
+
+void PlotWidget::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event); // Call base class implementation
+    //indicateChange();            // Call indicateChange on resize
+    this->adjustAxes();
+}
+
+void PlotWidget::onMouseWheel()
+{
+    // Restart the timer on every wheel event
+    zoomTimer->start();
+}
+void PlotWidget::onZoomFinished()
+{
+    emit zoomChanged(); // Emit custom signal after zooming stops
+}
+
