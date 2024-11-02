@@ -1,0 +1,10 @@
+<!-- resources.qrc -->
+<RCC>
+    <qresource prefix="/">
+        <file>resources/icons/icon_16.png</file>
+        <file>resources/icons/icon_32.png</file>
+        <file>resources/icons/icon_64.png</file>
+        <file>resources/icons/icon_128.png</file>
+        <file>resources/icons/icon_256.png</file>
+    </qresource>
+</RCC>

@@ -71,3 +71,14 @@ install(TARGETS voser
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(voser)
 endif()
+
+# Add resources.qrc file
+qt_add_resources(VOSER_RESOURCES resources.qrc)
+
+# Include resources in the target
+target_sources(voser PRIVATE ${VOSER_RESOURCES})
+
+# Add .rc file for Windows
+if(WIN32)
+    target_sources(voser PRIVATE app_icon.rc)
+endif()

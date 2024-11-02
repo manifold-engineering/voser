@@ -28,6 +28,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(container->plotWidget, &PlotWidget::requestRecompute, this, &MainWindow::compute);
 
 
+    this->setWindowTitle("Voser");
+    this->setWindowIcon(QIcon(":/resources/icons/icon_32.png"));
+
     //compute();
 }
 
