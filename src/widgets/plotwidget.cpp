@@ -97,16 +97,38 @@ PlotWidget::PlotWidget(QWidget *parent) : QWidget(parent)
 
     //debug range replotting
     connect(customPlot, &QCustomPlot::mouseRelease,
-            this, &PlotWidget::indicateChange);
+            this, &PlotWidget::dataRangeChanged);
 
 
     connect(this, &PlotWidget::zoomChanged,
-            this, &PlotWidget::indicateChange);
+            this, &PlotWidget::dataRangeChanged);
+}
+
+PlotParameters PlotWidget::getPlotParameters()
+{
+    PlotParameters parameters;
+
+    QCPRange xRange = customPlot->xAxis->range(); // X-axis visible range
+    QCPRange yRange = customPlot->yAxis->range(); // Y-axis visible range
+
+    parameters.xMin = xRange.lower;
+    parameters.xMax = xRange.upper;
+    parameters.yMin = yRange.lower;
+    parameters.yMax = yRange.upper;
+
+    QCPAxisRect *axisRect = colorMap->keyAxis()->axisRect();
+    parameters.xPix = axisRect->width();
+    parameters.yPix = axisRect->height();
+
+    return parameters;
 }
 
 void PlotWidget::replot(Solution data){
     std::cout << data.getM() << ", " << data.getN() << std::endl;
     // now we assign some data, by accessing the QCPColorMapData instance of the color map:
+
+    colorMap->data()->setSize(data.getM(),data.getN());            // Set the grid size
+    colorMap->data()->setRange(QCPRange(data.xMin, data.xMax), QCPRange(data.yMin, data.yMax));
 
     for (unsigned int xIndex=0; xIndex<data.getM(); ++xIndex)
     {
@@ -124,6 +146,7 @@ void PlotWidget::replot(Solution data){
     customPlot->replot();
 }
 
+/*
 void PlotWidget::indicateChange()
 {
     std::cout << "graf posunuty"<<std::endl;
@@ -140,8 +163,7 @@ void PlotWidget::indicateChange()
     double yMin = yRange.lower;
     double yMax = yRange.upper;
 
-    double xMid = xMin+xMax/2;
-    double yMid = yMin+yMax/2;
+
 
     QCPAxisRect *axisRect = colorMap->keyAxis()->axisRect();
     std::cout << "Velikost: " << axisRect->width() << ", " << axisRect->height() <<std::endl;
@@ -149,7 +171,7 @@ void PlotWidget::indicateChange()
 
     this->saveRanges();
     //range.upper
-}
+}*/
 
 
 
@@ -195,11 +217,17 @@ void PlotWidget::adjustAxes()
     this->saveRanges();
 }
 
+void PlotWidget::dataRangeChanged()
+{
+    emit requestRecompute();
+}
+
 void PlotWidget::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event); // Call base class implementation
     //indicateChange();            // Call indicateChange on resize
     this->adjustAxes();
+    this->dataRangeChanged();
 }
 
 void PlotWidget::onMouseWheel()

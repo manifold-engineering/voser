@@ -4,6 +4,7 @@
 
 #include "globalconfig.h"
 
+#include <algorithm>
 #include <QAbstractTableModel>
 
 
@@ -24,8 +25,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(model, &QAbstractTableModel::rowsRemoved, this, &MainWindow::compute);
     connect(container->frequencyManager, &FrequencyManagerWidget::frequencyChanged,
             this, &MainWindow::compute);
+    connect(container->plotWidget, &PlotWidget::requestRecompute, this, &MainWindow::compute);
 
-    compute();
+
+    //compute();
 }
 
 MainWindow::~MainWindow()
@@ -43,15 +46,21 @@ std::vector<double> sampleEquiDistant(double min, double max, int samples){
     return result;
 }
 
+
 void MainWindow::compute()
 {
-    std::vector<double> x = sampleEquiDistant(x_min, x_max, x_samples);
-    std::vector<double> y = sampleEquiDistant(y_min, y_max, y_samples);
+    PlotParameters parameters = container->plotWidget->getPlotParameters();
 
+    unsigned int xResolution = std::max(parameters.xPix/2, 1u);
+    if (xResolution > 1e4) xResolution = 1;
 
+    unsigned int yResolution = std::max(parameters.yPix/2, 1u);
+    if (yResolution > 1e4) yResolution = 1;
 
+    std::vector<double> x = sampleEquiDistant(parameters.xMin, parameters.xMax, xResolution);
+    std::vector<double> y = sampleEquiDistant(parameters.yMin, parameters.yMax, yResolution);
     double angularFrequency = container->frequencyManager->getAngularFrequency();
-
     Solution newData = solver->solve(x, y, model->exportActiveSources(), angularFrequency);
     container->plotWidget->replot(newData);
 }
+

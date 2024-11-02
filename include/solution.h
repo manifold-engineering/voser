@@ -12,6 +12,8 @@ public:
     double &operator()(unsigned int a, unsigned int b);
     unsigned int getM() const {return m;};
     unsigned int getN() const {return n;};
+
+    double xMin, xMax, yMin, yMax;
 };
 
 

@@ -64,7 +64,10 @@ Solution MultisubSolver::solve(double frequency)
 
     std::vector<wave>waves(sources.size());
 
-
+    result.xMin = coords_x.front();
+    result.xMax = coords_x.back();
+    result.yMin = coords_y.front();
+    result.yMax = coords_y.back();
 
     for(int x_index = 0; x_index < coords_x.size(); ++x_index){
         double x = coords_x[x_index];

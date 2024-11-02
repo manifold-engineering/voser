@@ -7,6 +7,13 @@
 #include <QWidget>
 #include <QVBoxLayout>
 
+
+struct PlotParameters{
+    double xMin, xMax, yMin, yMax;
+    unsigned int xPix, yPix;
+};
+
+
 class PlotWidget : public QWidget
 {
     Q_OBJECT
@@ -29,6 +36,7 @@ protected:
 
 public:
     explicit PlotWidget(QWidget *parent = nullptr);
+    PlotParameters getPlotParameters();
 
 public slots:
     void onZoomFinished();
@@ -37,11 +45,11 @@ public slots:
 private slots:
     void onMouseWheel();
     void adjustAxes();
-
-
-    void indicateChange();
+    void dataRangeChanged();
 signals:
     void zoomChanged();
+    void requestRecompute();
+
 
 };
 
