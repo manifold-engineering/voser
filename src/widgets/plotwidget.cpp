@@ -31,7 +31,7 @@ PlotWidget::PlotWidget(QWidget *parent) : QWidget(parent)
     colorMap = new QCPColorMap(customPlot->xAxis, customPlot->yAxis);
 
 
-    std::cout << "x: " << x_samples << ", y: " << y_samples << std::endl;
+    //std::cout << "x: " << x_samples << ", y: " << y_samples << std::endl;
     colorMap->data()->setSize(x_samples, y_samples);
 
     colorMap->data()->setRange(QCPRange(x_min, x_max), QCPRange(y_min, y_max)); // and span the coordinate range -4..4 in both key (x) and value (y) dimensions
@@ -53,7 +53,7 @@ PlotWidget::PlotWidget(QWidget *parent) : QWidget(parent)
     // the gradient, see the documentation of QCPColorGradient for what's possible.
 
     // rescale the data dimension (color) such that all data points lie in the span visualized by the color gradient:
-    colorMap->rescaleDataRange();
+    //colorMap->rescaleDataRange();
 
     // make sure the axis rect and color scale synchronize their bottom and top margins (so they line up):
     QCPMarginGroup *marginGroup = new QCPMarginGroup(customPlot);
@@ -102,7 +102,10 @@ PlotWidget::PlotWidget(QWidget *parent) : QWidget(parent)
 
     connect(this, &PlotWidget::zoomChanged,
             this, &PlotWidget::dataRangeChanged);
+
 }
+
+
 
 PlotParameters PlotWidget::getPlotParameters()
 {
@@ -141,8 +144,7 @@ void PlotWidget::replot(Solution data){
     }
     //  std::cout << "data do plotu nastavena" << std::endl;    //early debug
     colorMap->rescaleDataRange();
-    std::cout << "rozsah preskalovan" << std::endl; //early debug
-    //colorMap->rescaleAxes();
+    colorMap->rescaleAxes();
     customPlot->replot();
 }
 
@@ -193,23 +195,23 @@ void PlotWidget::adjustAxes()
     unsigned int pixX = axisRect->width();
     unsigned int pixY = axisRect->height();
     double k = pixX/(double)pixY;
-    std::cout << "DEBUG: Adjusting axes ranges to ratio " << k << std::endl;
+    //std::cout << "DEBUG: Adjusting axes ranges to ratio " << k << std::endl;
 
     double xRangeOld = lastXMax - lastXMin;
     double yRangeOld = lastYMax - lastYMin;
     double xRange = std::sqrt(xRangeOld*yRangeOld*k);
     double yRange =xRange/k;
 
-    std::cout << "DEBUG: new aspect " << xRange/yRange << std::endl;
+    //std::cout << "DEBUG: new aspect ratio" << xRange/yRange << std::endl;
 
-    std::cout << "DEBUG: old area" << xRangeOld * yRangeOld << std::endl;
-    std::cout << "DEBUG: new area" << xRange * yRange << std::endl;
+    //std::cout << "DEBUG: old area" << xRangeOld * yRangeOld << std::endl;
+    //std::cout << "DEBUG: new area" << xRange * yRange << std::endl;
 
     double xMid = (lastXMax+lastXMin)/2;
     double yMid = (lastYMax+lastYMin)/2;
 
 
-    std::cout << "DEBUG: old mid" << xMid << ", "<< yMid << std::endl;
+    //std::cout << "DEBUG: old mid" << xMid << ", "<< yMid << std::endl;
 
     customPlot->xAxis->setRange(xMid - xRange/2, xMid + xRange/2);
     customPlot->yAxis->setRange(yMid - yRange/2, yMid + yRange/2);

@@ -31,7 +31,9 @@ MainWindow::MainWindow(QWidget *parent)
     this->setWindowTitle("Voser");
     this->setWindowIcon(QIcon(":/resources/icons/icon_32.png"));
 
-    //compute();
+    this->resize(600, 750); // Set the default size
+
+    compute();
 }
 
 MainWindow::~MainWindow()
@@ -49,6 +51,12 @@ std::vector<double> sampleEquiDistant(double min, double max, int samples){
     return result;
 }
 
+
+void MainWindow::showEvent(QShowEvent *event)
+{
+    QMainWindow::showEvent(event);
+    compute();
+}
 
 void MainWindow::compute()
 {

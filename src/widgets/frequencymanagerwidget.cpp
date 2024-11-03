@@ -39,6 +39,8 @@ FrequencyManagerWidget::FrequencyManagerWidget(QWidget *parent) : QWidget(parent
             this, &FrequencyManagerWidget::updateLabel);
     connect(slider, &QSlider::valueChanged,
             this, &FrequencyManagerWidget::sliderValueChanged);
+
+    this->updateLabel();
 }
 
 double FrequencyManagerWidget::getFrequency()

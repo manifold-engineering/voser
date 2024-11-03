@@ -15,6 +15,9 @@ private:
     MultisubSolver *solver;
     SourcesTableModel *model;
     class ContainerWidget *container;
+protected:
+    void showEvent(QShowEvent *event) override; // Override showEvent
+
 protected slots:
     void compute();
 

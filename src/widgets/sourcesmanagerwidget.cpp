@@ -25,6 +25,9 @@ SourcesManagerWidget::SourcesManagerWidget(QWidget *parent) : QWidget(parent)
 
     SourcesManagerMainLayout->addWidget(tableView);
     SourcesManagerMainLayout->addLayout(SourcesManagerButtonLayout);
+
+
+
     this->setLayout(SourcesManagerMainLayout);
 }
 
@@ -42,6 +45,14 @@ void SourcesManagerWidget::setModel(SourcesTableModel *newModel)
             this, &SourcesManagerWidget::removeSources);
     connect(clearButton, &QPushButton::clicked,
             model, &SourcesTableModel::clearSources);
+
+
+    tableView->setColumnWidth(0, 80);
+    tableView->setColumnWidth(1, 80);
+    tableView->setColumnWidth(2, 80);
+    tableView->setColumnWidth(3, 80);
+    tableView->setColumnWidth(4, 16);
+    tableView->setColumnWidth(5, 16);
 }
 
 
